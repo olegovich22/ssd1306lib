@@ -333,3 +333,72 @@ OLED_err OLED_put_rectangle(OLED *oled, uint8_t x_from, uint8_t y_from, uint8_t 
 
 	return OLED_EOK;
 }
+
+
+OLED_err OLED_put_elipse(OLED *oled, uint8_t x, uint8_t y, uint16_t a, uint16_t b, enum OLED_params params)
+{
+	if (params > (OLED_BLACK | OLED_FILL | OLED_BORDER_BLACK))
+	return OLED_EPARAMS;
+	
+	bool pixel_border_color = params & (1<<2);
+	
+	bool pixel_color = params & (1<<0);
+	bool is_fill = params & (1<<1);
+	
+	uint32_t a_2=a*a;
+	uint32_t b_2=b*b;
+	uint32_t ab_2=a_2*b_2;
+	
+	uint16_t x_cur=x;
+	uint16_t y_cur=y+b;
+	
+	uint32_t err_move_right=0;
+	uint32_t err_move_diag=0;
+	uint32_t err_move_down=0;
+
+	uint32_t move_right=0;
+	uint32_t move_diag=0;
+	uint32_t move_down=0;
+	
+	uint8_t begin, end;
+	uint8_t last_lvl_u=y+b;
+	
+	if(x<128 && x>=0 && y+b<64 && y+b>=0) OLED_put_pixel_(oled, x, y+b, pixel_border_color); 
+	if(x<128 && x>=0 && y-b<64 && y-b>=0) OLED_put_pixel_(oled, x, y-b, pixel_border_color); 
+	
+	while(y_cur>=y)
+	{	
+		move_right=(((x_cur-x+1)*(x_cur-x+1))*b_2)+(((y_cur-y)*(y_cur-y))*a_2);
+		move_diag=((x_cur-x+1)*(x_cur-x+1)*b_2)+(((y_cur-y-1)*(y_cur-y-1))*a_2);
+		move_down=(((x_cur-x)*(x_cur-x))*b_2)+(((y_cur-y-1)*(y_cur-y-1))*a_2);
+		
+		err_move_right=move_right>ab_2?move_right-ab_2:ab_2-move_right;
+		err_move_diag=move_diag>ab_2?move_diag-ab_2:ab_2-move_diag;
+		err_move_down=move_down>ab_2?move_down-ab_2:ab_2-move_down;
+		
+		if(err_move_right<=err_move_diag && err_move_right<=err_move_down) {x_cur++;}
+		else if(err_move_diag<=err_move_right && err_move_diag<=err_move_down) {x_cur++; y_cur--;}
+		else {y_cur--;}
+		
+		if(x_cur<128 && x_cur>=0 && y_cur<64 && y_cur>=0) OLED_put_pixel_(oled, x_cur, y_cur, pixel_border_color);
+		if(x_cur-2*(x_cur-x)<128 && x_cur-2*(x_cur-x)>=0 && y_cur<64 && y_cur>=0) OLED_put_pixel_(oled, x_cur-2*(x_cur-x), y_cur, pixel_border_color);
+		if(x_cur<128 && x_cur>=0 && y_cur-2*(y_cur-y)<64 && y_cur-2*(y_cur-y)>=0) OLED_put_pixel_(oled, x_cur, y_cur-2*(y_cur-y), pixel_border_color);
+		if(x_cur-2*(x_cur-x)<128 && x_cur-2*(x_cur-x)>=0 && y_cur-2*(y_cur-y)<64 && y_cur-2*(y_cur-y)>=0) OLED_put_pixel_(oled, x_cur-2*(x_cur-x), y_cur-2*(y_cur-y), pixel_border_color);
+		
+		if(x_cur+1>127) begin=127;
+		else begin=x_cur-1;
+		
+		if(x_cur<x) end=0;
+		else if(x_cur<2*(x_cur-x)) end=0;
+		else end=x_cur-2*(x_cur-x);
+		
+		if(is_fill && y_cur!=y+b && last_lvl_u!=y_cur)for(uint16_t i=begin; i>end; i--)
+		{
+			if(y_cur<64 && y_cur>=0) { OLED_put_pixel_(oled, i, y_cur, pixel_color); }
+			if(y_cur-2*(y_cur-y)<64 && y_cur-2*(y_cur-y)>=0) {OLED_put_pixel_(oled, i, y_cur-2*(y_cur-y), pixel_color);}
+			last_lvl_u=y_cur;
+		}
+		
+	}
+	return OLED_EOK;
+}

@@ -66,7 +66,9 @@ enum OLED_params {
 	OLED_WHITE = 0x00,		/* Alias for 0 as color	      */
 	OLED_BLACK = 0x01,		/* Alias for 1 as color	      */
 	OLED_NO_FILL = 0x00,		/* Do not fill the drawn area */
-	OLED_FILL = 0x02		/* Fill the area	      */
+	OLED_FILL = 0x02,		/* Fill the area	      */
+	OLED_BORDER_WHITE =0x00, /* border collor*/
+	OLED_BORDER_BLACK = 0x04 /* border collor*/
 };
 
 /* Lock type. Need to be volatile to prevent optimizations */
@@ -276,3 +278,26 @@ OLED_err OLED_put_pixel(OLED *oled, uint8_t x, uint8_t y, bool pixel_state);
  * (!) Notice: method is not atomic. If required, protect it with lock
  */
 OLED_err OLED_put_rectangle(OLED *oled, uint8_t x_from, uint8_t y_from, uint8_t x_to, uint8_t y_to, enum OLED_params params);
+
+
+/**
+ * OLED_put_elipse - function for display elipse
+ * @oled:	OLED object
+ * @x: 		x center coordinate
+ * @y: 		y center coordinate
+ * @a: 		radius big semiaxis
+ * @b: 		radius small semiaxis
+ * @params: params for drawing
+ *			OLED_WHITE:			Fill white
+ *			OLED_BLACK:			Fill black
+ *			OLED_NO_FILL: 		Do not fill the drawn area 
+ *			OLED_FILL:			Fill the area
+ *			OLED_BORDER_WHITE: 	Border white
+ *			OLED_BORDER_BLACK: 	Border black
+ * 
+ *
+ * Using: OLED_put_elipse(&oled, 64, 32, 10, 5, OLED_FILL | OLED_BLACK | OLED_BORDER_WHITE);
+ * On display you will see elipse fill black with white border
+ *
+ */
+OLED_err OLED_put_elipse(OLED *oled, uint8_t x, uint8_t y, uint16_t a, uint16_t b, enum OLED_params params);
